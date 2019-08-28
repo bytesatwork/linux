@@ -6,6 +6,7 @@
 /dts-v1/;
 
 #include "stm32mp157c-byteengine-m5.dtsi"
+#include <dt-bindings/net/ti-dp83867.h>
 
 / {
 	model = "byteDEVKIT";
@@ -200,7 +201,7 @@
 	phy-mode = "rgmii";
 	phy-handle = <&phy0>;
 	st,eth_clk_sel = <1>;
-	max-speed = <100>;
+	max-speed = <1000>;
 	clock-names = "stmmaceth", "mac-clk-tx", "mac-clk-rx", "eth-ck", "syscfg-clk", "ethstp";
 	clocks = <&rcc ETHMAC>,<&rcc ETHTX>,<&rcc ETHRX>,<&rcc ETHCK_K>,<&rcc SYSCFG>,<&rcc ETHSTP>;
 
@@ -210,6 +211,11 @@
 		compatible = "snps,dwmac-mdio";
 		phy0: ethernet-phy@0 {
 			reg = <0>;
+			ti,rx-internal-delay = <DP83867_RGMIIDCTL_2_25_NS>;
+			ti,tx-internal-delay = <DP83867_RGMIIDCTL_250_PS>;
+			ti,fifo-depth = <DP83867_PHYCR_FIFO_DEPTH_8_B_NIB>;
+			ti,min-output-impedance;
+			ti,dp83867-rxctrl-strap-quirk;
 		};
 	};
 };
