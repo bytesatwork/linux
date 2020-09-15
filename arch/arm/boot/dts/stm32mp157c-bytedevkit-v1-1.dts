@@ -1,0 +1,110 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ *  Copyright (C) 2020 bytes at work AG - http://www.bytesatwork.ch
+ */
+
+/dts-v1/;
+
+#include "stm32mp157c-bytedevkit-common.dtsi"
+
+/ {
+	model = "byteDEVKIT V1.1";
+	compatible = "batw,bytedevkit-v1-1", "batw,bytedevkit", "batw,m5", "st,stm32mp157";
+};
+
+&pinctrl {
+	i2c2_pins: i2c2-0 {
+		pins {
+			pinmux = <STM32_PINMUX('H', 4, AF4)>, /* I2C3_SCL */
+				 <STM32_PINMUX('H', 5, AF4)>; /* I2C3_SDA */
+			bias-pull-up;
+			drive-open-drain;
+			slew-rate = <0>;
+		};
+	};
+
+	i2c2_pins_sleep: i2c2-1 {
+		pins {
+			pinmux = <STM32_PINMUX('H', 4, ANALOG)>, /* I2C3_SCL */
+				 <STM32_PINMUX('H', 5, ANALOG)>; /* I2C3_SDA */
+		};
+	};
+
+	ethernet0_rgmii_pins: rgmii-0 {
+		pins1 {
+			pinmux = <STM32_PINMUX('G', 4, AF11)>, /* ETH_RGMII_GTX_CLK */
+				 <STM32_PINMUX('B', 12, AF11)>, /* ETH_RGMII_TXD0 */
+				 <STM32_PINMUX('G', 14, AF11)>, /* ETH_RGMII_TXD1 */
+				 <STM32_PINMUX('C', 2, AF11)>, /* ETH_RGMII_TXD2 */
+				 <STM32_PINMUX('E', 2, AF11)>, /* ETH_RGMII_TXD3 */
+				 <STM32_PINMUX('G', 11, AF11)>, /* ETH_RGMII_TX_CTL */
+				 <STM32_PINMUX('C', 1, AF11)>; /* ETH_MDC */
+			bias-disable;
+			drive-push-pull;
+			slew-rate = <2>;
+		};
+
+		pins2 {
+			pinmux = <STM32_PINMUX('A', 2, AF11)>; /* ETH_MDIO */
+			bias-disable;
+			drive-push-pull;
+			slew-rate = <0>;
+		};
+
+		pins3 {
+			pinmux = <STM32_PINMUX('C', 4, AF11)>, /* ETH_RGMII_RXD0 */
+				 <STM32_PINMUX('C', 5, AF11)>, /* ETH_RGMII_RXD1 */
+				 <STM32_PINMUX('H', 6, AF11)>, /* ETH_RGMII_RXD2 */
+				 <STM32_PINMUX('H', 7, AF11)>, /* ETH_RGMII_RXD3 */
+				 <STM32_PINMUX('A', 1, AF11)>, /* ETH_RGMII_RX_CLK */
+				 <STM32_PINMUX('A', 7, AF11)>; /* ETH_RGMII_RX_CTL */
+			bias-disable;
+		};
+	};
+};
+
+&ethernet0 {
+	status = "okay";
+	pinctrl-0 = <&ethernet0_rgmii_pins>;
+	pinctrl-names = "default";
+	phy-mode = "rgmii";
+	phy-handle = <&phy0>;
+	st,eth_clk_sel = <1>;
+	max-speed = <1000>;
+	clock-names = "stmmaceth", "mac-clk-tx", "mac-clk-rx", "eth-ck", "syscfg-clk", "ethstp";
+	clocks = <&rcc ETHMAC>, <&rcc ETHTX>, <&rcc ETHRX>, <&rcc ETHCK_K>, <&rcc SYSCFG>, <&rcc ETHSTP>;
+
+	mdio0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "snps,dwmac-mdio";
+		phy0: ethernet-phy@0 {
+			reg = <0>;
+			ti,rx-internal-delay = <DP83867_RGMIIDCTL_2_25_NS>;
+			ti,tx-internal-delay = <DP83867_RGMIIDCTL_2_75_NS>;
+			ti,fifo-depth = <DP83867_PHYCR_FIFO_DEPTH_4_B_NIB>;
+			ti,dp83867-rxctrl-strap-quirk;
+		};
+	};
+};
+
+&i2c2 {
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&i2c2_pins>;
+	pinctrl-1 = <&i2c2_pins_sleep>;
+	i2c-scl-rising-time-ns = <185>;
+	i2c-scl-falling-time-ns = <20>;
+	status = "okay";
+	/delete-property/dmas;
+	/delete-property/dma-names;
+
+	gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		interrupt-parent = <&gpiob>;
+		interrupts = <7 0>;
+
+		irq-gpios = <&gpiob 7 0>;
+		reset-gpios = <&gpiod 3 0>;
+	};
+};
