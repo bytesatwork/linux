@@ -1,0 +1,13 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ *  Copyright (C) 2020 bytes at work AG - http://www.bytesatwork.ch
+ */
+
+/dts-v1/;
+
+#include "stm32mp157c-bytedevkit.dtsi"
+
+/ {
+	model = "byteDEVKIT V1.1";
+	compatible = "batw,bytedevkit", "batw,m5", "st,stm32mp157";
+};
