@@ -16,10 +16,6 @@
 		stdout-path = "serial0:115200n8";
 	};
 
-	memory@c0000000 {
-		reg = <0xc0000000 0x20000000>;
-	};
-
 	usb_vbus: regulator-vbus {
 		compatible = "regulator-fixed";
 		regulator-name = "usb_en_vbus";
@@ -45,7 +41,7 @@
 };
 
 &pinctrl {
-	uart4_pins_b: uart4-0 {
+	uart4_pins: uart4-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('H', 13, AF8)>; /* UART4_TX */
 			bias-disable;
@@ -59,7 +55,7 @@
 		};
 	};
 
-	uart4_idle_pins_b: uart4-idle-0 {
+	uart4_idle_pins: uart4-idle-0 {
 		pins1 {
 			pinmux = <STM32_PINMUX('H', 13, ANALOG)>; /* UART4_TX */
 		};
@@ -70,7 +66,7 @@
 		};
 	};
 
-	uart4_sleep_pins_b: uart4-sleep-0 {
+	uart4_sleep_pins: uart4-sleep-0 {
 		pins {
 			pinmux = <STM32_PINMUX('H', 13, ANALOG)>, /* UART4_TX */
 				 <STM32_PINMUX('H', 14, ANALOG)>; /* UART4_RX */
@@ -92,19 +88,57 @@
 		};
 	};
 
-	usbotg_hs_pins_a: usbotg_hs-0 {
+	ethernet0_rgmii_pins: rgmii-0 {
+		pins1 {
+			pinmux = <STM32_PINMUX('G', 4, AF11)>, /* ETH_RGMII_GTX_CLK */
+				 <STM32_PINMUX('B', 12, AF11)>, /* ETH_RGMII_TXD0 */
+				 <STM32_PINMUX('G', 14, AF11)>, /* ETH_RGMII_TXD1 */
+				 <STM32_PINMUX('C', 2, AF11)>, /* ETH_RGMII_TXD2 */
+				 <STM32_PINMUX('E', 2, AF11)>, /* ETH_RGMII_TXD3 */
+				 <STM32_PINMUX('G', 11, AF11)>, /* ETH_RGMII_TX_CTL */
+				 <STM32_PINMUX('C', 1, AF11)>; /* ETH_MDC */
+			bias-disable;
+			drive-push-pull;
+			slew-rate = <2>;
+		};
+
+		pins2 {
+			pinmux = <STM32_PINMUX('A', 2, AF11)>; /* ETH_MDIO */
+			bias-disable;
+			drive-push-pull;
+			slew-rate = <0>;
+		};
+
+		pins3 {
+			pinmux = <STM32_PINMUX('C', 4, AF11)>, /* ETH_RGMII_RXD0 */
+				 <STM32_PINMUX('C', 5, AF11)>, /* ETH_RGMII_RXD1 */
+				 <STM32_PINMUX('H', 6, AF11)>, /* ETH_RGMII_RXD2 */
+				 <STM32_PINMUX('H', 7, AF11)>, /* ETH_RGMII_RXD3 */
+				 <STM32_PINMUX('A', 1, AF11)>, /* ETH_RGMII_RX_CLK */
+				 <STM32_PINMUX('A', 7, AF11)>; /* ETH_RGMII_RX_CTL */
+			bias-disable;
+		};
+	};
+
+	/* same as &i2c2_pins_a but with pull-up */
+	i2c2_pins: i2c2-0 {
 		pins {
-			pinmux = <STM32_PINMUX('A', 10, ANALOG)>; /* OTG_ID */            /* configure 'PA10' as ANALOG */
+			pinmux = <STM32_PINMUX('H', 4, AF4)>, /* I2C2_SCL */
+				 <STM32_PINMUX('H', 5, AF4)>; /* I2C2_SDA */
+			bias-pull-up;
+			drive-open-drain;
+			slew-rate = <0>;
 		};
 	};
 };
 
 &uart4 {
-	pinctrl-names = "default", "sleep", "idle", "no_console_suspend";
-	pinctrl-0 = <&uart4_pins_b>;
-	pinctrl-1 = <&uart4_sleep_pins_b>;
-	pinctrl-2 = <&uart4_idle_pins_b>;
-	pinctrl-3 = <&uart4_pins_b>;
+	pinctrl-names = "default", "sleep", "idle";
+	pinctrl-0 = <&uart4_pins>;
+	pinctrl-1 = <&uart4_sleep_pins>;
+	pinctrl-2 = <&uart4_idle_pins>;
+	/delete-property/dmas;
+	/delete-property/dma-names;
 	status = "okay";
 };
 
@@ -120,23 +154,69 @@
 	status = "okay";
 };
 
+&ethernet0 {
+	status = "okay";
+	pinctrl-0 = <&ethernet0_rgmii_pins>;
+	pinctrl-names = "default";
+	phy-mode = "rgmii-id";
+	phy-handle = <&phy0>;
+	st,eth-clk-sel = <1>;
+	max-speed = <100>;
+	clock-names = "stmmaceth", "mac-clk-tx", "mac-clk-rx", "eth-ck", "syscfg-clk", "ethstp";
+	clocks = <&rcc ETHMAC>, <&rcc ETHTX>, <&rcc ETHRX>, <&rcc ETHCK_K>, <&rcc SYSCFG>, <&rcc ETHSTP>;
+
+	mdio0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "snps,dwmac-mdio";
+		phy0: ethernet-phy@0 {
+			reg = <0>;
+			ti,rx-internal-delay = <DP83867_RGMIIDCTL_2_25_NS>;
+			ti,tx-internal-delay = <DP83867_RGMIIDCTL_2_75_NS>;
+			ti,fifo-depth = <DP83867_PHYCR_FIFO_DEPTH_4_B_NIB>;
+		};
+	};
+};
+
+&i2c2 {
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&i2c2_pins>;
+	pinctrl-1 = <&i2c2_pins_sleep_a>;
+	i2c-scl-rising-time-ns = <185>;
+	i2c-scl-falling-time-ns = <20>;
+	status = "okay";
+	/delete-property/dmas;
+	/delete-property/dma-names;
+
+	gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		interrupt-parent = <&gpiob>;
+		interrupts = <7 0>;
+
+		irq-gpios = <&gpiob 7 0>;
+		reset-gpios = <&gpiod 3 0>;
+	};
+};
+
 &usbh_ehci {
 	phys = <&usbphyc_port0>;
 	phy-names = "usb";
-	vbus-supply = <&usb_vbus>;
 	status = "okay";
 };
 
 &usbh_ohci {
 	phys = <&usbphyc_port0>;           /* Use USBPHYC HS PHY port, mapped on USBH controller */
 	phy-names = "usb";
-	vbus-supply = <&usb_vbus>;
 	status = "okay";
 };
 
 &usbphyc {
-	vdd3v3-supply = <&vdd_usb>;
 	status = "okay";
+};
+
+&usbphyc_port0 {
+	phy-supply = <&usb_vbus>;
 };
 
 
@@ -147,7 +227,6 @@
 	dr_mode = "peripheral";
 	phys = <&usbphyc_port1 0>;
 	phy-names = "usb2-phy";
-	vbus-supply = <&usbotg_vbus>;
 	status = "okay";
 };
 
