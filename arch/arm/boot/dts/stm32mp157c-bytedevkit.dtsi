@@ -155,15 +155,15 @@
 };
 
 &ethernet0 {
-	status = "okay";
-	pinctrl-0 = <&ethernet0_rgmii_pins>;
 	pinctrl-names = "default";
+	pinctrl-0 = <&ethernet0_rgmii_pins>;
 	phy-mode = "rgmii-id";
 	phy-handle = <&phy0>;
 	st,eth-clk-sel = <1>;
 	max-speed = <100>;
 	clock-names = "stmmaceth", "mac-clk-tx", "mac-clk-rx", "eth-ck", "syscfg-clk", "ethstp";
 	clocks = <&rcc ETHMAC>, <&rcc ETHTX>, <&rcc ETHRX>, <&rcc ETHCK_K>, <&rcc SYSCFG>, <&rcc ETHSTP>;
+	status = "okay";
 
 	mdio0 {
 		#address-cells = <1>;
@@ -297,9 +297,9 @@
 	status = "okay";
 
 	pwm2: pwm {
+		pinctrl-names = "default", "sleep";
 		pinctrl-0 = <&pwm2_pins>;
 		pinctrl-1 = <&pwm2_sleep_pins>;
-		pinctrl-names = "default", "sleep";
 		#pwm-cells = <2>;
 		status = "okay";
 	};
