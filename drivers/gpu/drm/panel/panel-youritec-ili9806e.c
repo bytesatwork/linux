@@ -9,15 +9,16 @@
  */
 
 #include <linux/backlight.h>
+#include <linux/delay.h>
 #include <linux/gpio/consumer.h>
 #include <linux/regulator/consumer.h>
 
 #include <video/mipi_display.h>
 
-#include <drm/drmP.h>
 #include <drm/drm_mipi_dsi.h>
+#include <drm/drm_modes.h>
 #include <drm/drm_panel.h>
-
+#include <drm/drm_print.h>
 
 enum ili9806e_op {
         ILI9806C_SWITCH_PAGE,
@@ -190,7 +191,6 @@ static const struct drm_display_mode default_mode = {
 	.vsync_start 	= 854 + 100,
 	.vsync_end 	= 854 + 100 + 10,
 	.vtotal 	= 854 + 100 + 10 + 50,
-	.vrefresh 	= 60,
 	.flags 		= 0,
 	.width_mm 	= 87,
 	.height_mm 	= 87,
@@ -355,25 +355,26 @@ static int ili9806e_enable(struct drm_panel *panel)
 	return 0;
 }
 
-static int ili9806e_get_modes(struct drm_panel *panel)
+static int ili9806e_get_modes(struct drm_panel *panel,
+			      struct drm_connector *connector)
 {
 	struct drm_display_mode *mode;
 
-	mode = drm_mode_duplicate(panel->drm, &default_mode);
+	mode = drm_mode_duplicate(connector->dev, &default_mode);
 	if (!mode) {
-		DRM_ERROR("failed to add mode %ux%ux@%u\n",
-			  default_mode.hdisplay, default_mode.vdisplay,
-			  default_mode.vrefresh);
+		dev_err(panel->dev, "failed to add mode %ux%u@%u\n",
+			default_mode.hdisplay, default_mode.vdisplay,
+			drm_mode_vrefresh(&default_mode));
 		return -ENOMEM;
 	}
 
 	drm_mode_set_name(mode);
 
 	mode->type = DRM_MODE_TYPE_DRIVER | DRM_MODE_TYPE_PREFERRED;
-	drm_mode_probed_add(panel->connector, mode);
+	drm_mode_probed_add(connector, mode);
 
-	panel->connector->display_info.width_mm = mode->width_mm;
-	panel->connector->display_info.height_mm = mode->height_mm;
+	connector->display_info.width_mm = mode->width_mm;
+	connector->display_info.height_mm = mode->height_mm;
 
 	return 1;
 }
@@ -423,9 +424,8 @@ static int ili9806e_probe(struct mipi_dsi_device *dsi)
 	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
 			  MIPI_DSI_MODE_LPM;
 
-	drm_panel_init(&ctx->panel);
-	ctx->panel.dev = dev;
-	ctx->panel.funcs = &ili9806e_drm_funcs;
+	drm_panel_init(&ctx->panel, dev, &ili9806e_drm_funcs,
+		       DRM_MODE_CONNECTOR_DSI);
 
 	drm_panel_add(&ctx->panel);
 
