@@ -113,10 +113,6 @@
 	/delete-property/dmas;
 	/delete-property/dma-names;
 
-	eeprom: eeprom@50 {
-		reg = <0x50>;
-	};
-
 	pmic: stpmic@33 {
 		compatible = "st,stpmic1";
 		reg = <0x33>;
