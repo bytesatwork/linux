@@ -3803,6 +3803,11 @@ S:	Maintained
 F:	drivers/scsi/BusLogic.*
 F:	drivers/scsi/FlashPoint.*
 
+BYTES AT WORK MODULES AND BOARDS
+M:	Daniel Ammann <daniel.ammann@bytesatwork.ch>
+S:	Maintained
+F:	Documentation/devicetree/bindings/arm/bytesatwork/bytesatwork.yaml
+
 C-MEDIA CMI8788 DRIVER
 M:	Clemens Ladisch <clemens@ladisch.de>
 L:	alsa-devel@alsa-project.org (moderated for non-subscribers)
