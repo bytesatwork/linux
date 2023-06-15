@@ -8,7 +8,8 @@
 # [1.1.0] - 2022-07-18: Extend to handle Zephyr project repos as well
 # [1.2.0] - 2022-09-02: Extend to handle Zephyr module repos as well
 # [2.0.0] - 2022-09-02: Check each patch file in a separate job
-
+# [2.0.1] - 2022-09-28: Change cache key so that restoring works properly
+# [2.0.2] - 2022-12-20: Replace deprecated 'set-output' with 'GITHUB_OUTPUT' environment file
 
 # This Github action checks a pull request using checkpatch
 name: checkpatch
@@ -16,7 +17,7 @@ on: pull_request
 jobs:
   setup-checkpatch:
     name: Setup Checkpatch
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       ZEPHYR_DEFAULT_VERSION: v3.1.0
     outputs:
@@ -67,17 +68,16 @@ jobs:
             ${{ github.workspace }}/west.yml
             ${{ github.workspace }}/zephyr/*
             ${{ github.workspace }}/*.patch
-          key: checkpatch-files-${{ hashFiles('*.patch') }}
+          key: checkpatch-files-${{ github.event.pull_request.head.sha }}
 
       - name: Set list of patch filenames as output
         id: set-matrix
         run: |
-          echo "::set-output name=patches::$(ls *.patch | jq -R -s -c 'split("\n")[:-1]')"
-
+          echo "patches=$(ls *.patch | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
 
   run-checkpatch:
     name: Run Checkpatch
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: setup-checkpatch
     strategy:
       fail-fast: false
@@ -97,7 +97,7 @@ jobs:
             ${{ github.workspace }}/west.yml
             ${{ github.workspace }}/zephyr/*
             ${{ github.workspace }}/*.patch
-          key: checkpatch-files-${{ hashFiles('*.patch') }}
+          key: checkpatch-files-${{ github.event.pull_request.head.sha }}
 
       - name: Install dependencies
         run: |
